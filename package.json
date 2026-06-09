@@ -19,6 +19,7 @@
     "dev:report": "npm run dev -w services/reporting-service",
     "dev:notif": "npm run dev -w services/notification-service",
     "prisma:generate": "prisma generate",
+    "vercel-build": "prisma generate && npm run build -w frontend",
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:deploy": "prisma migrate deploy",
     "seed": "ts-node prisma/seed.ts",
