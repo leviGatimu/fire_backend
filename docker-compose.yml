@@ -1,0 +1,106 @@
+# ─────────────────────────────────────────────────────────────────────────
+# TZW FEMS — full platform orchestration
+#   docker compose up --build
+# ─────────────────────────────────────────────────────────────────────────
+
+x-service-base: &service-base
+  env_file: .env
+  restart: unless-stopped
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fems-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - fems-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot: apply schema + seed, then exit. All services wait for this.
+  migrate:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    container_name: fems-migrate
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npx prisma migrate deploy && npx ts-node prisma/seed.ts"
+    restart: "no"
+
+  api-gateway:
+    <<: *service-base
+    build: { context: ., dockerfile: services/api-gateway/Dockerfile }
+    container_name: fems-gateway
+    ports: ["8080:8080"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      auth-service: { condition: service_started }
+
+  auth-service:
+    <<: *service-base
+    build: { context: ., dockerfile: services/auth-service/Dockerfile }
+    container_name: fems-auth
+    ports: ["4001:4001"]
+
+  user-service:
+    <<: *service-base
+    build: { context: ., dockerfile: services/user-service/Dockerfile }
+    container_name: fems-user
+    ports: ["4002:4002"]
+
+  extinguisher-service:
+    <<: *service-base
+    build: { context: ., dockerfile: services/extinguisher-service/Dockerfile }
+    container_name: fems-extinguisher
+    ports: ["4003:4003"]
+
+  inspection-service:
+    <<: *service-base
+    build: { context: ., dockerfile: services/inspection-service/Dockerfile }
+    container_name: fems-inspection
+    ports: ["4004:4004"]
+
+  maintenance-service:
+    <<: *service-base
+    build: { context: ., dockerfile: services/maintenance-service/Dockerfile }
+    container_name: fems-maintenance
+    ports: ["4005:4005"]
+
+  reporting-service:
+    <<: *service-base
+    build: { context: ., dockerfile: services/reporting-service/Dockerfile }
+    container_name: fems-reporting
+    ports: ["4006:4006"]
+
+  notification-service:
+    <<: *service-base
+    build: { context: ., dockerfile: services/notification-service/Dockerfile }
+    container_name: fems-notification
+    ports: ["4007:4007"]
+
+  frontend:
+    build: { context: ./frontend, dockerfile: Dockerfile }
+    container_name: fems-frontend
+    environment:
+      VITE_API_URL: http://localhost:8080/api
+    ports: ["5173:80"]
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+
+volumes:
+  fems-pg-data:

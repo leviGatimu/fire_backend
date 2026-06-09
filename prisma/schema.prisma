@@ -1,0 +1,222 @@
+// ─────────────────────────────────────────────────────────────────────────
+// TZW FEMS — Prisma schema (single source of truth for the data model)
+//
+// In a strict microservices deployment each bounded context owns its own
+// database. For this project all services share one PostgreSQL instance but
+// operate on clearly separated bounded contexts (auth/users, extinguishers,
+// inspections, maintenance, notifications, audit). The boundaries are enforced
+// in code (each service only touches its own tables). See docs/ARCHITECTURE.md.
+// ─────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ────────────────────────────────────────────────────────────────
+
+enum RoleName {
+  ADMIN
+  INSPECTOR
+  USER
+}
+
+enum ExtinguisherType {
+  WATER
+  CO2
+  FOAM
+  DRY_CHEMICAL
+}
+
+enum ExtinguisherSize {
+  LBS_2_5
+  LBS_5
+  LBS_9
+  LBS_12
+}
+
+enum ExtinguisherStatus {
+  ACTIVE
+  DUE_FOR_INSPECTION
+  EXPIRED
+  UNDER_MAINTENANCE
+  OUT_OF_SERVICE
+}
+
+enum InspectionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum NotificationChannel {
+  EMAIL
+  IN_APP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
+// ── Identity & access (auth + user services) ─────────────────────────────
+
+model Role {
+  id          String   @id @default(uuid())
+  name        RoleName @unique
+  description String?
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("roles")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  firstName         String    @map("first_name")
+  lastName          String    @map("last_name")
+  email             String    @unique
+  passwordHash      String    @map("password_hash")
+  isActive          Boolean   @default(true) @map("is_active")
+  phone             String?
+  roleId            String    @map("role_id")
+  role              Role      @relation(fields: [roleId], references: [id])
+
+  // Password reset
+  resetTokenHash    String?   @map("reset_token_hash")
+  resetTokenExpiry  DateTime? @map("reset_token_expiry")
+
+  refreshTokens     RefreshToken[]
+  inspections       Inspection[]   @relation("AssignedInspector")
+  maintenanceLogs   MaintenanceLog[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([roleId])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @map("token_hash") // sha256 of the refresh token
+  expiresAt DateTime @map("expires_at")
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ── Fire extinguisher domain ─────────────────────────────────────────────
+
+model FireExtinguisher {
+  id               String             @id @default(uuid())
+  serialNumber     String             @unique @map("serial_number")
+  location         String
+  type             ExtinguisherType
+  size             ExtinguisherSize
+  installationDate DateTime           @map("installation_date")
+  expiryDate       DateTime           @map("expiry_date")
+  status           ExtinguisherStatus @default(ACTIVE)
+
+  inspections      Inspection[]
+  maintenanceLogs  MaintenanceLog[]
+
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([type])
+  @@map("fire_extinguishers")
+}
+
+// ── Inspection domain ────────────────────────────────────────────────────
+
+model Inspection {
+  id             String           @id @default(uuid())
+  extinguisherId String           @map("extinguisher_id")
+  extinguisher   FireExtinguisher @relation(fields: [extinguisherId], references: [id], onDelete: Cascade)
+  scheduledAt    DateTime         @map("scheduled_at") // date + time combined
+  inspectorId    String           @map("inspector_id")
+  inspector      User             @relation("AssignedInspector", fields: [inspectorId], references: [id])
+  status         InspectionStatus @default(SCHEDULED)
+  notes          String?
+  completedAt    DateTime?        @map("completed_at")
+
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  @@index([extinguisherId])
+  @@index([inspectorId])
+  @@index([status])
+  @@map("inspections")
+}
+
+// ── Maintenance domain ───────────────────────────────────────────────────
+
+model MaintenanceLog {
+  id             String           @id @default(uuid())
+  extinguisherId String           @map("extinguisher_id")
+  extinguisher   FireExtinguisher @relation(fields: [extinguisherId], references: [id], onDelete: Cascade)
+  inspectorId    String           @map("inspector_id")
+  inspector      User             @relation(fields: [inspectorId], references: [id])
+  actionTaken    String           @map("action_taken")
+  actionDate     DateTime         @map("action_date")
+  conditionNotes String?          @map("condition_notes")
+  recommendations String?
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  @@index([extinguisherId])
+  @@index([inspectorId])
+  @@map("maintenance_logs")
+}
+
+// ── Notifications ────────────────────────────────────────────────────────
+
+model Notification {
+  id        String              @id @default(uuid())
+  userId    String              @map("user_id")
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   NotificationChannel @default(IN_APP)
+  subject   String
+  body      String
+  status    NotificationStatus  @default(PENDING)
+  metadata  Json?
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([status])
+  @@map("notifications")
+}
+
+// ── Audit trail ──────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String   // e.g. "extinguisher.create"
+  entity     String   // e.g. "FireExtinguisher"
+  entityId   String?  @map("entity_id")
+  metadata   Json?
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([entity])
+  @@map("audit_logs")
+}

@@ -1,0 +1,45 @@
+{
+  "name": "tzw-fems",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TZW LTD Fire Extinguisher Management System — microservices monorepo",
+  "workspaces": [
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev": "concurrently -n gateway,auth,user,ext,insp,maint,report,notif -c blue,green,yellow,magenta,cyan,white,red,gray \"npm:dev:gateway\" \"npm:dev:auth\" \"npm:dev:user\" \"npm:dev:ext\" \"npm:dev:insp\" \"npm:dev:maint\" \"npm:dev:report\" \"npm:dev:notif\"",
+    "dev:gateway": "npm run dev -w services/api-gateway",
+    "dev:auth": "npm run dev -w services/auth-service",
+    "dev:user": "npm run dev -w services/user-service",
+    "dev:ext": "npm run dev -w services/extinguisher-service",
+    "dev:insp": "npm run dev -w services/inspection-service",
+    "dev:maint": "npm run dev -w services/maintenance-service",
+    "dev:report": "npm run dev -w services/reporting-service",
+    "dev:notif": "npm run dev -w services/notification-service",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:deploy": "prisma migrate deploy",
+    "seed": "ts-node prisma/seed.ts",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint . --ext .ts"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.30",
+    "@types/supertest": "^6.0.2",
+    "concurrently": "^8.2.2",
+    "jest": "^29.7.0",
+    "jest-mock-extended": "^3.0.7",
+    "prisma": "^5.12.1",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.1.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.12.1"
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "TZW FEMS API",
+    "description": "Fire Extinguisher Management System — via API Gateway (:8080). Run 'Login' first; it stores {{accessToken}}/{{refreshToken}} automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "extinguisherId", "value": "" }
+  ],
+  "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}" }] },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/auth/register",
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\",\n  \"email\": \"jane@tzw.com\",\n  \"password\": \"Passw0rd!\"\n}" } }
+        },
+        {
+          "name": "Login",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const d = pm.response.json().data;",
+            "pm.collectionVariables.set('accessToken', d.accessToken);",
+            "pm.collectionVariables.set('refreshToken', d.refreshToken);"
+          ] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@tzw.com\",\n  \"password\": \"Admin@1234\"\n}" } }
+        },
+        { "name": "Me", "request": { "method": "GET", "url": "{{baseUrl}}/auth/me" } },
+        { "name": "Refresh", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/auth/refresh", "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" } } },
+        { "name": "Forgot password", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/auth/forgot-password", "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@tzw.com\"\n}" } } },
+        { "name": "Logout", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/auth/logout", "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" } } }
+      ]
+    },
+    {
+      "name": "Extinguishers",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": "{{baseUrl}}/extinguishers?page=1&limit=10" } },
+        {
+          "name": "Create",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('extinguisherId', pm.response.json().data.id);"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/extinguishers",
+            "body": { "mode": "raw", "raw": "{\n  \"serialNumber\": \"FE-9001\",\n  \"location\": \"Building D — Floor 1\",\n  \"type\": \"CO2\",\n  \"size\": \"LBS_5\",\n  \"installationDate\": \"2025-01-15\",\n  \"expiryDate\": \"2030-01-15\"\n}" } }
+        },
+        { "name": "Get by id", "request": { "method": "GET", "url": "{{baseUrl}}/extinguishers/{{extinguisherId}}" } },
+        { "name": "Update", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/extinguishers/{{extinguisherId}}", "body": { "mode": "raw", "raw": "{\n  \"status\": \"UNDER_MAINTENANCE\"\n}" } } },
+        { "name": "Delete", "request": { "method": "DELETE", "url": "{{baseUrl}}/extinguishers/{{extinguisherId}}" } }
+      ]
+    },
+    {
+      "name": "Inspections",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": "{{baseUrl}}/inspections" } },
+        { "name": "Schedule", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/inspections", "body": { "mode": "raw", "raw": "{\n  \"extinguisherId\": \"{{extinguisherId}}\",\n  \"inspectorId\": \"<inspector-uuid>\",\n  \"scheduledAt\": \"2026-07-01T09:30:00Z\",\n  \"notes\": \"Annual\"\n}" } } },
+        { "name": "Complete", "request": { "method": "PATCH", "url": "{{baseUrl}}/inspections/<id>/complete" } },
+        { "name": "Cancel", "request": { "method": "PATCH", "url": "{{baseUrl}}/inspections/<id>/cancel" } }
+      ]
+    },
+    {
+      "name": "Maintenance",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": "{{baseUrl}}/maintenance" } },
+        { "name": "Create", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/maintenance", "body": { "mode": "raw", "raw": "{\n  \"extinguisherId\": \"{{extinguisherId}}\",\n  \"actionTaken\": \"Replaced gauge\",\n  \"actionDate\": \"2026-06-01\"\n}" } } },
+        { "name": "Export CSV", "request": { "method": "GET", "url": "{{baseUrl}}/maintenance/export" } }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        { "name": "Summary", "request": { "method": "GET", "url": "{{baseUrl}}/reports/summary" } },
+        { "name": "Monthly", "request": { "method": "GET", "url": "{{baseUrl}}/reports/monthly?year=2026" } },
+        { "name": "Export PDF", "request": { "method": "GET", "url": "{{baseUrl}}/reports/export/pdf" } },
+        { "name": "Export Excel", "request": { "method": "GET", "url": "{{baseUrl}}/reports/export/excel" } }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        { "name": "List", "request": { "method": "GET", "url": "{{baseUrl}}/users" } },
+        { "name": "My profile", "request": { "method": "GET", "url": "{{baseUrl}}/users/me/profile" } },
+        { "name": "Change password", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users/me/password", "body": { "mode": "raw", "raw": "{\n  \"currentPassword\": \"Admin@1234\",\n  \"newPassword\": \"Admin@5678\"\n}" } } }
+      ]
+    }
+  ]
+}
