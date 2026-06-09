@@ -9,6 +9,14 @@ multiple facilities.
 > Docker + Docker Compose, OpenAPI/Swagger, centralized logging.
 
 ---
+### Preview
+<img width="1793" height="868" alt="image" src="https://github.com/user-attachments/assets/d0ce14a4-d025-430b-bdf3-ff7def7f10b0" />
+<img width="1793" height="855" alt="image" src="https://github.com/user-attachments/assets/703aaab4-6b2f-47f2-a555-bd390b6afe87" />
+<img width="1797" height="871" alt="image" src="https://github.com/user-attachments/assets/5a175c68-a83e-48e9-a75b-e09b4c19da46" />
+<img width="1775" height="867" alt="image" src="https://github.com/user-attachments/assets/b8afe671-6892-411e-8db6-f93016417cf3" />
+<img width="1790" height="867" alt="image" src="https://github.com/user-attachments/assets/38ca5883-8091-435f-a730-87bd53722312" />
+<img width="1795" height="865" alt="image" src="https://github.com/user-attachments/assets/762a23e6-4068-4bfb-b172-a681756df28d" />
+
 
 ## 1. What's in this repository
 
