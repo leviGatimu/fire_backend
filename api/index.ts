@@ -2,16 +2,16 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { createLogger, requestLogger, errorHandler, notFoundHandler } from '../packages/shared/src/index';
+import { createLogger, requestLogger, errorHandler, notFoundHandler } from '../packages/shared/src/index.ts';
 
 // Import Routers directly from services
-import authRoutes from '../services/auth-service/src/routes/auth.routes';
-import userRoutes from '../services/user-service/src/routes/user.routes';
-import extinguisherRoutes from '../services/extinguisher-service/src/routes/extinguisher.routes';
-import inspectionRoutes from '../services/inspection-service/src/routes/inspection.routes';
-import maintenanceRoutes from '../services/maintenance-service/src/routes/maintenance.routes';
-import reportRoutes from '../services/reporting-service/src/routes/report.routes';
-import notificationRoutes from '../services/notification-service/src/routes/notification.routes';
+import authRoutes from '../services/auth-service/src/routes/auth.routes.ts';
+import userRoutes from '../services/user-service/src/routes/user.routes.ts';
+import extinguisherRoutes from '../services/extinguisher-service/src/routes/extinguisher.routes.ts';
+import inspectionRoutes from '../services/inspection-service/src/routes/inspection.routes.ts';
+import maintenanceRoutes from '../services/maintenance-service/src/routes/maintenance.routes.ts';
+import reportRoutes from '../services/reporting-service/src/routes/report.routes.ts';
+import notificationRoutes from '../services/notification-service/src/routes/notification.routes.ts';
 
 const logger = createLogger('combined-api');
 const app = express();

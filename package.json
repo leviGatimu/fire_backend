@@ -2,6 +2,7 @@
   "name": "tzw-fems",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "TZW LTD Fire Extinguisher Management System — microservices monorepo",
   "workspaces": [
     "packages/*",
