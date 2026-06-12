@@ -2,7 +2,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { createLogger, requestLogger, errorHandler, notFoundHandler } from '../packages/shared/src';
+import { createLogger, requestLogger, errorHandler, notFoundHandler } from '../packages/shared/src/index';
 
 // Import Routers directly from services
 import authRoutes from '../services/auth-service/src/routes/auth.routes';
