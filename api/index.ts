@@ -43,4 +43,9 @@ app.use('/api/notifications', notificationRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler(logger));
 
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  logger.info(`Combined API server listening on port ${PORT}`);
+});
+
 export default app;
